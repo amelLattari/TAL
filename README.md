@@ -7,9 +7,9 @@ python3 test.py
 
 l'execution en local pas sur collab sur un terminal local (check lancement postgres sudo systemctl status postgresql)
 
-psql -U minour -d finance_db
+sur un autre terminal: psql -U minour -d finance_db
 
-minur128@ pour le mp
+minour128@ pour le mp
 
 apres les tables sont dans le code
 
