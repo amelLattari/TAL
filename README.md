@@ -27,6 +27,12 @@ Remplace peer par trust pour permettre à l'utilisateur postgres de se connecter
 local   all             postgres                                trust
 
 Save the file and exit (Ctrl + O, then Ctrl + X).
+CREATE USER minour WITH PASSWORD 'minour128@';
+CREATE ROLE
+CREATE DATABASE finance_db;
+GRANT ALL PRIVILEGES ON DATABASE finance_db TO minour;
+
+sudo -u postgres psql
 sur un autre terminal: psql -U minour -d finance_db
 
 minour128@ pour le mp
