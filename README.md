@@ -1,7 +1,7 @@
 # TAL
 # Bibliotheque Python3
 
-pip install PyPDF2 psycopg2-binary sqlalchemy
+pip install PyPDF2 psycopg2-binary sqlalchemy yfinance
 
 python3 test.py
 
