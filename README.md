@@ -41,6 +41,7 @@ apres les tables sont dans le code
 
 python3 test.py
 
+sudo systemctl restart postgresql
 
 
 
