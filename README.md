@@ -43,6 +43,9 @@ python3 test.py
 
 sudo systemctl restart postgresql
 
+# interface utilisateur
+pip install streamlit plotly pandas psycopg2 streamlit-chat
+streamlit run finance_chatbot.py
 
 
 
