@@ -6,6 +6,8 @@ import streamlit as st
 import plotly.graph_objects as go
 import pandas as pd
 from streamlit_chat import message
+import pickle
+import numpy as np
 
 # Configuration de la base de données
 DATABASE_CONFIG = {
@@ -100,7 +102,30 @@ def execute_query(sql_query):
         if connection:
             connection.close()
 
-# Fonction pour calculer les métriques financières
+# Fonction pour calculer le RSI
+def calculate_rsi(prices, period=14):
+    if len(prices) < period:
+        return Decimal('55.0')  # Valeur neutre si nous n'avons pas assez de données
+
+    # Calcul des variations de prix
+    deltas = np.diff(prices)
+    gains = np.maximum(deltas, 0)
+    losses = -np.minimum(deltas, 0)
+
+    # Moyennes des gains et pertes
+    avg_gain = np.mean(gains[:period])
+    avg_loss = np.mean(losses[:period])
+
+    # Éviter la division par zéro
+    if avg_loss == 0:
+        return Decimal('100.0')
+
+    # Calcul du RSI
+    rs = avg_gain / avg_loss
+    rsi = 100 - (100 / (1 + rs))
+    return Decimal(rsi)
+
+# Fonction principale pour calculer les métriques
 def calculate_metrics(yahoo_data, finnhub_data):
     if not yahoo_data and not finnhub_data:
         st.warning("Données insuffisantes pour effectuer les calculs.")
@@ -109,14 +134,18 @@ def calculate_metrics(yahoo_data, finnhub_data):
     close_price = Decimal(yahoo_data[0]['close_price']) if yahoo_data else Decimal(finnhub_data[0]['current_price'])
     volume = yahoo_data[0]['volume'] if yahoo_data else 0
 
+    # Exemple de récupération de données fondamentales
     net_income = Decimal('95000000000')
     shares_outstanding = Decimal('15700000000')
+
+    # Calcul des indicateurs financiers
     eps = net_income / shares_outstanding
     pe_ratio = close_price / eps
     market_cap = close_price * shares_outstanding
 
-    # Calcul du RSI (exemple simplifié)
-    rsi = Decimal('55.0')  # Remplacez par un calcul réel du RSI
+    # Préparation des données pour le calcul du RSI
+    close_prices = [Decimal(row['close_price']) for row in yahoo_data]
+    rsi = calculate_rsi(close_prices)
 
     return {
         "EPS": eps,
@@ -144,18 +173,60 @@ def plot_stock_prices(data, symbol, sym):
     )
     st.plotly_chart(fig)
 
+# Fonction pour obtenir une recommandation basée sur les indicateurs
+def get_recommendation(symbol, metrics):
+    try:
+        # Charger le modèle et le scaler
+        with open("recommendation_model.pkl", "rb") as f:
+            model = pickle.load(f)
+        with open("scaler.pkl", "rb") as f:
+            scaler = pickle.load(f)
+
+        # Préparer les données pour le modèle
+        data = pd.DataFrame([{
+            "rsi": float(metrics["RSI"]),
+            "macd": 0.0,  # Remplacez par un calcul réel du MACD si disponible
+            "eps": float(metrics["EPS"]),
+            "pe_ratio": float(metrics["P/E Ratio"])
+        }])
+
+        # Appliquer le scaler et prédire
+        X = scaler.transform(data)
+        prediction = model.predict(X)[0]
+
+        # Décision basée sur la prédiction
+        decision = {
+            1: "Acheter (Buy)",
+            0: "Vendre (Sell)",
+            -1: "Conserver (Hold)"
+        }.get(prediction, "Aucune recommandation disponible")
+
+        # Explication détaillée
+        explanation = (
+            f"🔍 Analyse des indicateurs pour {symbol} :\n"
+            f"📈 **RSI** : {metrics['RSI']:.2f} (Indice de force relative)\n"
+            f"📊 **MACD** : 0.00 (Tendance court-terme)\n"  # Remplacez par un calcul réel du MACD
+            f"💵 **EPS** : {metrics['EPS']:.2f} (Bénéfice par action)\n"
+            f"📉 **P/E Ratio** : {metrics['P/E Ratio']:.2f} (Valorisation de l'action)\n"
+        )
+
+        if metrics['RSI'] < 30:
+            explanation += "✅ Le RSI est faible, l'action est sous-évaluée, ce qui peut être une opportunité d'achat.\n"
+        elif metrics['RSI'] > 70:
+            explanation += "⚠️ Le RSI est élevé, l'action pourrait être surévaluée.\n"
+
+        return decision, explanation
+    except Exception as e:
+        st.error(f"Erreur lors de la génération de la recommandation : {e}")
+        return "Erreur", f"Une erreur s'est produite : {e}"
+
 # Fonction pour afficher des recommandations
-def display_recommendations(metrics):
+def display_recommendations(symbol, metrics):
     st.subheader("Recommandations")
-    if metrics['P/E Ratio'] < 15 and metrics['RSI'] < 30:
-        st.success("Recommandation : Acheter")
-        st.write("Le ratio P/E est bas et le RSI indique que l'action est potentiellement sous-évaluée.")
-    elif metrics['P/E Ratio'] > 25 and metrics['RSI'] > 70:
-        st.warning("Recommandation : Vendre")
-        st.write("Le ratio P/E est élevé et le RSI indique que l'action est potentiellement surévaluée.")
-    else:
-        st.info("Recommandation : Maintenir")
-        st.write("Les indicateurs sont dans une fourchette modérée, ce qui suggère de conserver l'action.")
+    decision, explanation = get_recommendation(symbol, metrics)
+    st.write(f"**Recommandation :** {decision}")
+    st.write("📢 **Justification détaillée :**")
+    st.write(explanation)
 
 # Fonction pour le chatbot interactif
 def chatbot_response(user_input):
@@ -223,7 +294,7 @@ def main():
                     st.write(f"RSI : {metrics['RSI']}")
 
                     # Affichage des recommandations
-                    display_recommendations(metrics)
+                    display_recommendations(symbol, metrics)
 
     elif option == "Chatbot":
         st.header("Chatbot Financier")
