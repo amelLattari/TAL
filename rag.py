@@ -1,106 +1,95 @@
-import json
-import faiss
-import numpy as np
-from sentence_transformers import SentenceTransformer
+import zipfile
 import os
-import re
-from transformers import BertTokenizer, BertForQuestionAnswering
+import PyPDF2
+import numpy as np
+import faiss
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from sentence_transformers import SentenceTransformer
 
-# Chemins des fichiers
-PDF_CHUNKS_FILE = "pdf_chunks.json"
-INDEX_FILE = "sec_index.faiss"
-EMBEDDINGS_FILE = "sec_embeddings.npy"
+# Charger le modèle d'embedding
+embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
 
-# Chargement du modèle d'encodage
-model = SentenceTransformer("sentence-transformers/all-MiniLM-L12-v2")  # Modèle plus puissant
-tokenizer_qa = BertTokenizer.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
-model_qa = BertForQuestionAnswering.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
+def load_pdf(file_obj):
+    """Charge le contenu texte d'un fichier PDF."""
+    reader = PyPDF2.PdfReader(file_obj)
+    text = ""
+    for page in reader.pages:
+        if page.extract_text():
+            text += page.extract_text()
+    return text
 
-# Charger les chunks de texte des rapports SEC
-def load_chunks(file_path):
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"Le fichier {file_path} est introuvable.")
 
-    with open(file_path, "r", encoding="utf-8") as f:
-        return json.load(f)
+def chunk_text(text, chunk_size=500, overlap=50):
+    """Divise le texte en segments avec chevauchement."""
+    words = text.split()
+    chunks = []
+    for i in range(0, len(words), chunk_size - overlap):
+        chunk = " ".join(words[i:i + chunk_size])
+        chunks.append(chunk)
+    return chunks
 
-# Prétraitement des textes (nettoyage basique)
-def preprocess_text(text):
-    return text.replace("\n", " ").strip()
 
-# Extraction améliorée de "net income" via regex
-def extract_net_income(text):
-    match = re.search(r'(net\s*income|net\s*profit).*?(\$\d+[\.,]?\d*)', text, re.IGNORECASE)
-    if match:
-        return match.group(2)  # Retourne la valeur capturée
-    return "Net income not found"
+def load_and_chunk_pdfs_from_zip(zip_path):
+    """Charge et segmente les textes des fichiers PDF contenus dans une archive ZIP."""
+    all_chunks = []
+    with zipfile.ZipFile(zip_path, 'r') as archive:
+        pdf_files = [name for name in archive.namelist() if name.endswith(".pdf")]
+        for pdf_name in pdf_files:
+            with archive.open(pdf_name) as pdf_file:
+                text = load_pdf(pdf_file)
+                chunks = chunk_text(text)
+                all_chunks.extend(chunks)
+    return all_chunks
 
-# Création de l'index FAISS avec IVF et PQ (quantification des produits)
-def build_index(chunks):
-    texts = [preprocess_text(chunk["chunk_text"]) for chunk in chunks]
 
-    print("🔄 Encodage des textes...")
-    embeddings = model.encode(texts, convert_to_numpy=True, show_progress_bar=True)
+def create_embeddings(chunks):
+    """Crée les embeddings pour les segments de texte."""
+    chunk_embeddings = embedding_model.encode(chunks)
+    return np.array(chunk_embeddings).astype('float32')
 
-    print("📌 Création de l'index FAISS avec IVF et PQ...")
+
+def create_faiss_index(embeddings):
+    """Crée un index FAISS pour les embeddings."""
     dimension = embeddings.shape[1]
-    nlist = 100  # Nombre de clusters pour IVF
-    nbits = 8  # Nombre de bits pour la quantification des produits
+    index = faiss.IndexFlatL2(dimension)
+    index.add(embeddings)
+    return index
 
-    quantizer = faiss.IndexFlatL2(dimension)  # Quantizer utilisé pour l'index IVF
-    index = faiss.IndexIVFPQ(quantizer, dimension, nlist, nbits, faiss.METRIC_L2)
 
-    print("🧠 Entraînement de l'index FAISS...")
-    index.train(embeddings)  # Entraînement sur les embeddings
-    index.add(embeddings)    # Ajout des embeddings à l'index
+# Charger le modèle GPT pour la génération de texte
+model_name = "EleutherAI/gpt-neo-2.7B"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(model_name)
 
-    print("💾 Sauvegarde des embeddings et de l'index...")
-    np.save(EMBEDDINGS_FILE, embeddings)
-    faiss.write_index(index, INDEX_FILE)
-
-    return index, texts
-
-# Charger ou créer l'index
-def load_or_create_index():
-    if os.path.exists(INDEX_FILE) and os.path.exists(PDF_CHUNKS_FILE):
-        try:
-            print("✅ Chargement de l'index existant...")
-            index = faiss.read_index(INDEX_FILE)
-            texts = [preprocess_text(chunk["chunk_text"]) for chunk in load_chunks(PDF_CHUNKS_FILE)]
-            return index, texts
-        except Exception as e:
-            print(f"⚠️ Erreur lors du chargement de l'index : {e}")
-
-    print("🚀 Index non trouvé, création en cours...")
-    chunks = load_chunks(PDF_CHUNKS_FILE)
-    return build_index(chunks)
-
-# Recherche de documents pertinents
-def search_documents(query, top_k=3):
-    index, texts = load_or_create_index()
-
-    print(f"\n🔎 Recherche : {query}")
-
-    # Reformulation de la question pour améliorer la recherche
-    query_embedding = model.encode([query], convert_to_numpy=True)
-
-    # Recherche dans l'index FAISS
-    index.nprobe = 10  # Nombre de clusters explorés lors de la recherche (peut être ajusté)
+def generate_response(query, index, chunks, model, tokenizer, top_k=5):
+    """Génère une réponse à partir des chunks pertinents."""
+    query_embedding = embedding_model.encode([query])
     distances, indices = index.search(query_embedding, top_k)
+    relevant_chunks = [chunks[i] for i in indices[0]]
+    context = " ".join(relevant_chunks)
+    if len(context.split()) > 1024:
+        context = " ".join(context.split()[:1024])
+    input_text = f"Context: {context}\n\nQuestion: {query}\n\nAnswer:"
+    inputs = tokenizer(input_text, return_tensors="pt", truncation=True)
+    outputs = model.generate(**inputs, max_new_tokens=200)
+    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    return response
 
-    results = [{"score": distances[0][i], "text": texts[indices[0][i]], "net_income": extract_net_income(texts[indices[0][i]])} for i in range(len(indices[0]))]
 
-    return results
+def search_documents_from_zip(zip_path, query):
+    """Rechercher dans les documents d'une archive ZIP."""
+    # Charger et segmenter les rapports PDF
+    chunks = load_and_chunk_pdfs_from_zip(zip_path)
+    
+    # Créer les embeddings des chunks
+    chunk_embeddings = create_embeddings(chunks)
+    
+    # Créer l'index FAISS
+    index = create_faiss_index(chunk_embeddings)
+    
+    # Générer une réponse à la question
+    response = generate_response(query, index, chunks, model, tokenizer)
+    
+    return response
 
-# Interface interactive
-if __name__ == "__main__":
-    while True:
-        query = input("\n📝 Posez une question sur les rapports SEC (ou 'exit' pour quitter) : ")
-        if query.lower() == "exit":
-            break
 
-        results = search_documents(query)
-
-        print("\n🔍 Résultats pertinents :\n")
-        for idx, res in enumerate(results):
-            print(f"{idx+1}. (Score: {res['score']:.4f}) {res['net_income']} - {res['text']}\n{'-'*50}")
