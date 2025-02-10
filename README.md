@@ -86,17 +86,17 @@ streamlit run finance_chatbot.py
 
 ```
 📁 Projet_TAL_Finance  
-│── Pds.zip                 # Archive de données  
-│── README.md               # Documentation du projet  
-│── embedding.py            # Génération des embeddings  
-│── embedding_data.json     # Données d'embeddings  
-│── pdf_chunks.json         # Segmentation des PDF  
-│── rag.py                  # Modèle RAG (Retrieval-Augmented Generation)  
-│── requete.ipynb           # Notebook de test du llm de Paris Saclay pour la génération de requête a partir du langage naturel
-│── site.py                 # Interface web principale  
+│── Pds.zip                    # Archive de données  
+│── README.md                  # Documentation du projet  
+│── embedding.py               # Génération des embeddings  
+│── embedding_data.json        # Données d'embeddings  
+│── pdf_chunks.json            # Segmentation des PDF  
+│── rag.py                     # Modèle RAG (Retrieval-Augmented Generation)  
+│── requete.ipynb              # Notebook de test du llm de Paris Saclay pour la génération de requête a partir du langage naturel
+│── finance_chatbot.py         # Interface web principale  
 │── stock_prices_finnhub.json  # Données de prix des actions (Finnhub)  
-│── stock_prices_yahoo.json   # Données de prix des actions (Yahoo Finance)  
-│── test.py                 # Script de test  
+│── stock_prices_yahoo.json    # Données de prix des actions (Yahoo Finance)  
+│── test.py                    # Script de test  
 ```
 
 ---
