@@ -96,7 +96,7 @@ streamlit run finance_chatbot.py
 │── finance_chatbot.py         # Interface web principale  
 │── stock_prices_finnhub.json  # Données de prix des actions (Finnhub)  
 │── stock_prices_yahoo.json    # Données de prix des actions (Yahoo Finance)  
-│── extraction.py                    # Script d'extraction  
+│── extraction.py              # Script d'extraction  
 ```
 
 ---
