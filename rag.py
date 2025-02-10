@@ -35,9 +35,10 @@ def generate_response(query, index, chunks, model, tokenizer, embedding_model, t
     
     # Construction du prompt pour le modèle de génération
     prompt = (
-        "You are an expert financial analyst analyzing SEC reports. "
-        "You are provided with a context below extracted from SEC filings. "
-        "The answer must be based strictly on the context provided. "
+         "You are provided with data in the context below. "
+        "Ignore any existing questions and answers present in the context. "
+        "Answer only the following question in one concise sentence. "
+        "Do not include any context or extraneous information. "
         "Do not repeat the question in your answer under any circumstances. "
         "Your answer must start with 'Final Answer:'.\n\n"
         f"Context: {context}\n\n"
@@ -83,3 +84,5 @@ def search(query):
     Si aucune information pertinente n'est trouvée, renvoie "Les informations ne sont pas disponibles."
     """
     return generate_response(query, index, chunks, model, tokenizer, embedding_model)
+
+
