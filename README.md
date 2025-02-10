@@ -102,7 +102,7 @@ streamlit run finance_chatbot.py
 ---
 
 ## 📌 Auteurs  
-IKHELEF NOUR 
+IKHELEF NOUR
 AMEL LATTARI 
 AMINA TADJIN 
 
