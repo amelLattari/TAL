@@ -92,9 +92,8 @@ streamlit run finance_chatbot.py
 │── embedding_data.json     # Données d'embeddings  
 │── pdf_chunks.json         # Segmentation des PDF  
 │── rag.py                  # Modèle RAG (Retrieval-Augmented Generation)  
-│── requete.ipynb           # Notebook d'expérimentation et recommandations
+│── requete.ipynb           # Notebook de test du llm de Paris Saclay pour la génération de requête a partir du langage naturel
 │── site.py                 # Interface web principale  
-│── site_1.py               # Variante de l'interface  
 │── stock_prices_finnhub.json  # Données de prix des actions (Finnhub)  
 │── stock_prices_yahoo.json   # Données de prix des actions (Yahoo Finance)  
 │── test.py                 # Script de test  
