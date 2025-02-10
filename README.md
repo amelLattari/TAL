@@ -8,7 +8,7 @@ Assurez-vous d'avoir **Python 3** installé.
 ### 2️⃣ Installation des dépendances  
 ```bash
 pip install PyPDF2 psycopg2-binary sqlalchemy yfinance
-pip install PyPDF2 transformers torch sentence-transformers faiss-cpu
+pip install PyPDF2 transformers torch sentence-transformers faiss-cpu tf-keras
 ```
 
 ### 3️⃣ Configuration PostgreSQL  
