@@ -101,7 +101,8 @@ streamlit run finance_chatbot.py
 
 ---
 ## 🖥️ Aperçu de l'Application
-Étant donné que l'exécution du modèle RAG peut prendre du temps, voici un aperçu des résultats obtenus pour une requête typique.
+Étant donné que l'exécution du modèle RAG peut prendre du temps, voici un aperçu des résultats obtenus pour une requête typique. 
+
 🔹 Chatbot Financier avec RAG
 
 ![rag](https://github.com/user-attachments/assets/69f1497e-1a7b-40b2-8482-598465c7d2cd)
@@ -112,8 +113,8 @@ streamlit run finance_chatbot.py
 ![sql](https://github.com/user-attachments/assets/1eccf1f9-a4f6-48b5-9cf3-c32a98efbaa9)
 
 ## 📌 Auteurs  
-IKHELEF NOUR
-AMEL LATTARI 
-AMINA TADJIN 
+IKHELEF NOUR 
+AMEL LATTARI  
+AMINA TADJIN  
 
 
