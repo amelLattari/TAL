@@ -260,21 +260,45 @@ def main():
 
     elif option == "Recherche d'actions":
         st.header("Recherche d'actions")
-        symbols = ["AAPL", "AMZN", "MSFT"]  # Exemple
-        sym = st.selectbox("Choisissez une entreprise :", symbols)
-        if sym:
-            yahoo_data, finnhub_data = get_stock_data(sym)
+        def get_available_symbols():
+            connection = connect_db()
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT DISTINCT symbol FROM stock_prices_yahoo")
+                return [row[0] for row in cursor.fetchall()]
+
+        symbols = get_available_symbols()
+        company_names = [revert_symbol(symbol) for symbol in symbols]
+        sym = st.selectbox("Choisissez une entreprise :", company_names)
+        symbol = convert_symbol(sym)
+        if symbol:
+            yahoo_data, finnhub_data = get_stock_data(symbol)
             if yahoo_data:
                 st.subheader(f"Données pour {sym}")
-                plot_stock_prices(yahoo_data, sym, sym)
+                plot_stock_prices(yahoo_data, symbol, sym)
 
                 metrics = calculate_metrics(yahoo_data, finnhub_data)
                 if metrics:
-                    st.write(f"Prix actuel : {metrics['Close Price']} USD")
+                    st.subheader(f"Métriques financières pour {sym}")
+
+                    # Affichage des métriques avec infobulles
+                    st.write(f"Prix actuel de l'action : {metrics['Close Price']} USD")
+                    with st.expander("ℹ️ EPS"):
+                        st.write("**EPS (Earnings Per Share)** : Le bénéfice par action est un indicateur de la rentabilité d'une entreprise.")
                     st.write(f"EPS : {metrics['EPS']:.2f} USD")
+
+                    with st.expander("ℹ️ P/E Ratio"):
+                        st.write("**P/E Ratio (Price-to-Earnings Ratio)** : Le ratio cours/bénéfice mesure la valorisation d'une action.")
                     st.write(f"Ratio P/E : {metrics['P/E Ratio']:.2f}")
+
                     st.write(f"Capitalisation boursière : {metrics['Market Capitalization']:.2f} USD")
+                    st.write(f"Volume échangé : {metrics['Volume']} actions")
+
+                    with st.expander("ℹ️ RSI"):
+                        st.write("**RSI (Relative Strength Index)** : Un indicateur technique qui mesure la vitesse et le changement des mouvements de prix.")
                     st.write(f"RSI : {metrics['RSI']}")
+
+                    # Affichage des recommandations
+                    display_recommendations(symbol, metrics)
 
     elif option == "Chatbot (SQL)":
         st.header("Chatbot Financier (basé sur SQL)")
