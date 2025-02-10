@@ -107,6 +107,7 @@ streamlit run finance_chatbot.py
 
 ![rag](https://github.com/user-attachments/assets/69f1497e-1a7b-40b2-8482-598465c7d2cd)
 
+![rag2](https://github.com/user-attachments/assets/9de5b228-4306-4fe7-abe8-1d3d17e92672)
 
 🔹 Chatbot Financier (basé sur SQL)
 
