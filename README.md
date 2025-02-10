@@ -56,10 +56,10 @@ psql -U minour -d finance_db
 ```
 *(Mot de passe : `minour128@`)*  
 
-### 4️⃣ Lancement des tests  
-Les tables sont déjà définies dans le code. Exécutez le test avec :  
+### 4️⃣ Lancement des extractions  
+Les tables sont déjà définies dans le code. Exécutez le extraction avec :  
 ```bash
-python3 test.py
+python3 extraction.py
 ```
 Si nécessaire, redémarrez PostgreSQL :  
 ```bash
@@ -96,12 +96,12 @@ streamlit run finance_chatbot.py
 │── finance_chatbot.py         # Interface web principale  
 │── stock_prices_finnhub.json  # Données de prix des actions (Finnhub)  
 │── stock_prices_yahoo.json    # Données de prix des actions (Yahoo Finance)  
-│── test.py                    # Script de test  
+│── extraction.py                    # Script d'extraction  
 ```
 
 ---
-🖥️ Aperçu de l'Application
-
+## 🖥️ Aperçu de l'Application
+Étant donné que l'exécution du modèle RAG peut prendre du temps, voici un aperçu des résultats obtenus pour une requête typique.
 🔹 Chatbot Financier avec RAG
 
 ![rag](https://github.com/user-attachments/assets/69f1497e-1a7b-40b2-8482-598465c7d2cd)
