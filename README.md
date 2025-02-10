@@ -113,7 +113,7 @@ streamlit run finance_chatbot.py
 ![sql](https://github.com/user-attachments/assets/1eccf1f9-a4f6-48b5-9cf3-c32a98efbaa9)
 
 ## 📌 Auteurs  
-IKHELEF NOUR 
+IKHELEF NOUR  
 AMEL LATTARI  
 AMINA TADJIN  
 
